@@ -1,0 +1,8 @@
+>entry_1 nearest_nbr=entry_2
+AAAAAAAAAAAAA
+>entry_2 nearest_nbr=entry_1
+AAAAAAAAAAAAT
+>entry_3 nearest_nbr=entry_4
+GGGGGGGGGGGGG
+>entry_4 nearest_nbr=entry_3
+GGGGGGGGTTTTT
