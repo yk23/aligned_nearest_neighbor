@@ -1,5 +1,5 @@
 [package]
-name = "hamming_nearest_neighbor"
+name = "aligned_nearest_neighbor"
 version = "1.0.0"
 edition = "2024"
 

@@ -13,7 +13,7 @@ use indicatif::{ProgressBar, ProgressStyle, ParallelProgressIterator};
 use bio::io::fasta::Record;
 
 // ======== boilerplate code START
-type NeighborResult<'a> = Vec<(&'a Record, u64)>;
+type NeighborResult<'a> = Vec<(&'a Record, f32)>;
 
 
 #[derive(Debug, PartialEq)]  // Add PartialEq here
@@ -117,59 +117,93 @@ pub(super) fn compute_nearest_neighbors<'a>(
 /// # Returns
 ///
 /// The nearest-neighbor Fasta record, and the hamming distance between it and the query.
-fn compute_nearest_neighbors_single<'a>(query: &'a Record, collection: Arc<&'a Vec<&'a Record>>) -> (&'a Record, u64) {
-    let mut best_dist: u64 = u64::MAX;
+fn compute_nearest_neighbors_single<'a>(query: &'a Record, collection: Arc<&'a Vec<&'a Record>>) -> (&'a Record, f32) {
+    let mut best_idty: f32 = 0.0;
     let mut best_neighbor: Option<&Record> = None;
 
     for other in collection.iter().filter(|other| other.id() != query.id()) {
         // Honestly, panicking here is Ok!
-        let dist = hamming_distance(query, other).unwrap_or_else(|_| panic!("Hamming distance failed."));
-        if dist <= best_dist {
-            best_dist = dist;
+        let idty = pct_identity(query, other).unwrap_or_else(|_| panic!("Hamming distance failed."));
+        if idty >= best_idty {
+            best_idty = idty;
             best_neighbor = Some(other);
         }
     }
 
     // honestly, ok to panic here -- the collection ought to be non-empty.
-    (best_neighbor.unwrap(), best_dist)
+    (best_neighbor.unwrap(), best_idty)
 }
 
 
-fn hamming_distance(x: &Record, y: &Record) -> Result<u64, NearestNeighborError> {
+const GAP: u8 = '-' as u8;
+
+fn pct_identity(x: &Record, y: &Record) -> Result<f32, NearestNeighborError> {
     if x.seq().len() != y.seq().len() {
         return Err(NearestNeighborError::HammingDistanceError(x.id().to_owned(), y.id().to_owned()));
     }
 
-    let dist = x.seq()
+    let numer = x.seq()
         .iter()
         .zip(y.seq().iter())
-        .filter(|(xi, yi)| xi != yi)
+        .filter(|(xi, yi)| !(**xi == GAP && **yi == GAP))
+        .filter(|(xi, yi)| xi == yi)
         .count() as u64;
-    Ok(dist)
+    let denom = x.seq()
+        .iter()
+        .zip(y.seq().iter())
+        .filter(|(xi, yi)| !(**xi == GAP && **yi == GAP))
+        .count() as u64;
+    let idty = (numer as f32) / (denom as f32);
+    Ok(idty)
 }
 
 
+// fn hamming_distance(x: &Record, y: &Record) -> Result<u64, NearestNeighborError> {
+//     if x.seq().len() != y.seq().len() {
+//         return Err(NearestNeighborError::HammingDistanceError(x.id().to_owned(), y.id().to_owned()));
+//     }
+//
+//     let dist = x.seq()
+//         .iter()
+//         .zip(y.seq().iter())
+//         .filter(|(xi, yi)| xi != yi)
+//         .count() as u64;
+//     Ok(dist)
+// }
+//
+//
 #[cfg(test)]
 mod tests {
     use bio::io::fasta::Record;
-    use crate::nearest_neighbor::hamming_distance;
+    use crate::nearest_neighbor::pct_identity;
 
     #[test]
-    fn test_hamming() {
+    fn test_pct_identity() {
         let x = Record::with_attrs("input1", None, b"AAAAAAA");
         let y = Record::with_attrs("input2", None, b"AAAACCA");
-        assert_eq!(hamming_distance(&x, &y), Ok(2));
+        assert_eq!(pct_identity(&x, &y), Ok(5.0 / 7.0));
 
         let x = Record::with_attrs("input1", None, b"AAAA");
         let y = Record::with_attrs("input2", None, b"CCCC");
-        assert_eq!(hamming_distance(&x, &y), Ok(4));
+        assert_eq!(pct_identity(&x, &y), Ok(0.0));
 
         let x = Record::with_attrs("input1", None, b"AAAA");
         let y = Record::with_attrs("input2", None, b"AAAA");
-        assert_eq!(hamming_distance(&x, &y), Ok(0));
+        assert_eq!(pct_identity(&x, &y), Ok(1.0));
 
         let x = Record::with_attrs("input1", None, b"AAAA");
         let y = Record::with_attrs("input2", None, b"AAA");
-        assert!(hamming_distance(&x, &y).is_err());
+        assert!(pct_identity(&x, &y).is_err());
+
+        let x = Record::with_attrs("input1", None, b"----AAAA----");
+        let y = Record::with_attrs("input2", None, b"----AAA-----");
+        assert_eq!(pct_identity(&x, &y), Ok(3.0 / 4.0));
+
+        let x1 = Record::with_attrs("x1", None, b"-----------------------------------------AAAAAAAAAA---------------------");
+        let x2 = Record::with_attrs("x2", None, b"-------------------------CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC-------------");
+        let y = Record::with_attrs("y", None, b"--------------------------------------------CCC-------------------------");
+        let id1 = pct_identity(&x1, &y).unwrap();
+        let id2 = pct_identity(&x2, &y).unwrap();
+        assert!(id2 > id1);
     }
 }

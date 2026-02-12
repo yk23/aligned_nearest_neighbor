@@ -1,6 +1,6 @@
 use rstest::rstest;
 use std::path::PathBuf;
-use hamming_nearest_neighbor::parse_all_records;
+use aligned_nearest_neighbor::parse_all_records;
 
 #[rstest]
 #[case("simple_test")]
@@ -8,6 +8,6 @@ use hamming_nearest_neighbor::parse_all_records;
 #[case("mismatched_lengths")]
 fn test_with_expected_output(#[case] test_name: &str) {
     let input_path = PathBuf::from(format!("tests/inputs/{}.txt", test_name));
-    let records = parse_all_records(input_path);
+    let _records = parse_all_records(input_path);
     // assert!(records.len() > 0);
 }

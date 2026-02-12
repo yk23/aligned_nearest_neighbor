@@ -109,12 +109,12 @@ mod tests {
         assert_eq!(results.len(), 2);
         assert_eq!(results.len(), query_records.len());
 
-        let (res, dist) = results[0];
+        let (res, idty) = results[0];
         assert_eq!(res.id(), "db_1");
-        assert_eq!(dist, 13);
+        assert_eq!(idty, 3.0 / 16.0);
 
-        let (res, dist) = results[1];
+        let (res, idty) = results[1];
         assert_eq!(res.id(), "db_2");
-        assert_eq!(dist, 12);
+        assert_eq!(idty, 4.0 / 16.0);
     }
 }

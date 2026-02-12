@@ -4,7 +4,7 @@ use std::{
 };
 use clap::Parser;
 
-use hamming_nearest_neighbor::{
+use aligned_nearest_neighbor::{
     parse_all_records, parse_record_ids,
     nearest_neighbor::compute_store_nearest_neighbors,
 };
