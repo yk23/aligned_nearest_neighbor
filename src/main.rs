@@ -43,11 +43,13 @@ fn parse_id_file(id_file_path: Option<PathBuf>, arg_name: &str) -> Option<Vec<St
             None
         },
         Some(fpath) => {
-            println!("Parsing {} from file: {}", arg_name, fpath.display());
-            Some(parse_record_ids(&fpath).unwrap_or_else(|e| {
+            let ids = parse_record_ids(&fpath).unwrap_or_else(|e| {
                 eprintln!("Error reading file {}: {}", fpath.display(), e);
                 exit(1);
-            }))
+            });
+
+            println!("Parsing {} from file: {} ({} entries)", arg_name, fpath.display(), ids.len());
+            Some(ids)
         }
     }
 }
