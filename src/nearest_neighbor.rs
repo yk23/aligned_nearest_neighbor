@@ -121,7 +121,9 @@ fn compute_nearest_neighbors_single<'a>(query: &'a Record, collection: Arc<&'a V
     let mut best_idty: f32 = 0.0;
     let mut best_neighbor: Option<&Record> = None;
 
-    for other in collection.iter().filter(|other| other.id() != query.id()) {
+    // Note: this used to exclude self-matches via: .filter(|other| other.id() != query.id())
+    // but this is no longer necessary since the program explicitly asks for query & collection ID sets.
+    for other in collection.iter() {
         // Honestly, panicking here is Ok!
         let idty = pct_identity(query, other).unwrap_or_else(|_| panic!("Hamming distance failed."));
         if idty >= best_idty {
