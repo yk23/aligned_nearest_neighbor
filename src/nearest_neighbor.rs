@@ -125,7 +125,13 @@ fn compute_nearest_neighbors_single<'a>(query: &'a Record, collection: Arc<&'a V
     // but this is no longer necessary since the program explicitly asks for query & collection ID sets.
     for other in collection.iter() {
         // Honestly, panicking here is Ok!
-        let idty = pct_identity(query, other).unwrap_or_else(|_| panic!("Hamming distance failed."));
+        let idty = pct_identity(query, other)
+            .unwrap_or_else(
+                |e| {
+                    println!("Unexpected fatal error during identity calculation: {}", e);
+                    panic!("calculation failed")
+                }
+            );
         if idty >= best_idty {
             best_idty = idty;
             best_neighbor = Some(other);
