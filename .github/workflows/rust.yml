@@ -11,17 +11,19 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
+ 
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --release --verbose
+ 
     - name: Run tests
       run: cargo test --verbose
+ 
     - name: Upload binary
       uses: actions/upload-artifact@v4
       with:
         name: aligned_nearest_neighbor-linux-x86_64
         path: target/release/aligned_nearest_neighbor
+
